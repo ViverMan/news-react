@@ -7,6 +7,8 @@ import NewsList from "../../components/NewsList/NewsList"
 import Skeleton from "../../components/Skeleton/Skeleton"
 import Pagenation from "../../components/Pagenation/Pagenation"
 import Categories from "../../components/Categories/Categories"
+import Search from "../../components/Search/Search"
+import useDebounce from "../../helpers/hooks/useDebounce.js"
 
 const Main = () => {
 	const [news, setNews] = useState([])
@@ -14,9 +16,12 @@ const Main = () => {
 	// --- состояние текущей страницы --- //
 	const [currentPage, setCurrentPage] = useState(1)
 	const [categories, setCategories] = useState([])
+	const [keywords, setKeywords] = useState('')
 	const [selectedCategory, setSelectedCategory] = useState('All')
 	const totalPages = 10
 	const pageSize = 10
+
+	const debouncedKeywords = useDebounce(keywords, 1500)
 	const fetchNews = async (currentPage) => {
 		try {
 			setIsLoading(true)
@@ -24,7 +29,8 @@ const Main = () => {
 				{ 
 					page_number: currentPage, 
 					page_size: pageSize, 
-					category: selectedCategory === 'All' ? null : selectedCategory 
+					category: selectedCategory === 'All' ? null : selectedCategory,
+					keywords: debouncedKeywords, 
 				}
 			)
 			setNews(response.news)
@@ -50,7 +56,7 @@ const Main = () => {
 
 	useEffect(() => {
 		fetchNews(currentPage)
-	}, [currentPage, selectedCategory]);
+	}, [currentPage, selectedCategory, debouncedKeywords]);
 
 	// --- функционал переключения страниц --- //
 	const handleNextPage = () => {
@@ -68,8 +74,14 @@ const Main = () => {
 	}
 	return (
 		<main className={styles.main}>
-			<Categories categories={categories} setSelectedCategory={setSelectedCategory} selectedCategory={selectedCategory} />
+			<Categories 
+				categories={categories} 
+				setSelectedCategory={setSelectedCategory} 
+				selectedCategory={selectedCategory} 
+			/>
+			<Search keywords={keywords} setKeywords={setKeywords}/>
 			{news.length > 0 && !loading ? <NewsBanner item={news[0]} /> : <Skeleton type="banner" count={1} />}
+
 			<Pagenation 
 				handleNextPage={handleNextPage} 
 				handlePrevPage={handlePrevPage} 
